@@ -1,0 +1,100 @@
+/*
+===============================================================================
+ Name        : Proyecto1.c
+ Author      : $(author)
+ Version     :
+ Copyright   : $(copyright)
+ Description : main definition
+===============================================================================
+*/
+
+
+#include "board.h"
+#include <cr_section_macros.h>
+
+// TODO: insert other include files here
+
+void InitHardware(void);
+
+void Tarea1(void);
+
+void InitLed(void);
+
+// TODO: insert other definitions and declarations here
+
+#define tiempo 24
+#define pGPIO LPC_GPIO
+#define port 0 // Número de puerto
+#define pin 22 // Número de pin
+#define output 1
+#define prendido 1
+#define apagado 0
+
+uint16_t i = 0; // Variable entera no signada de 16 bits
+uint32_t demora = tiempo; // Variable entera no signada de 32 bits
+uint8_t flag = 0; // Variable entera no signada de 8 bits (Variable tipo bandera)
+bool estado = prendido; // Variable booleana
+
+int main(void) {
+
+	InitHardware();
+	InitLed();
+
+	while(1) {
+
+		Tarea1();
+	__WFI(); // Duerme el procesador mientras la variable demora es distinto de 0
+	}
+	return 0 ;
+}
+
+
+void InitHardware(void){
+
+    SystemCoreClockUpdate();
+    // Read clock settings and update SystemCoreClock variable
+
+    Board_Init();
+
+    // Set up and initialize all required blocks and
+    // functions related to the board hardware
+
+    Board_LED_Set(0, true);
+    // Set the LED to the state of "On"
+    SysTick_Config(SystemCoreClock/1000); // Interrumpe el contador interno SysTick y entra a la función SysTick_Handler
+}
+
+void Tarea1(void){
+
+	if(flag){
+		flag = 0;
+		demora = tiempo;
+
+		switch(estado){
+		case prendido:
+		{
+			Chip_GPIO_SetPinOutLow(pGPIO, port, pin); // Apaga el LED
+			estado = apagado;
+		}
+		break;
+		case apagado:
+		{
+			Chip_GPIO_SetPinOutHigh(pGPIO, port, pin); // Enciende el LED
+			estado = prendido;
+		}
+		break;
+		}
+	}
+}
+
+void InitLed(void){
+
+	Chip_GPIO_SetPinDIR(pGPIO, port, pin, output); // Configura el pin del LED como salida
+}
+
+void SysTick_Handler(void){
+	if (demora){
+		demora--;
+	}
+	else flag = 1;
+}
