@@ -1,0 +1,130 @@
+#include "board.h"
+
+#include <cr_section_macros.h>
+
+void PrenderLed(void);
+
+void ApagarLed(void);
+
+void InitHardware(void);
+
+void DiagramadeEstados(void);
+
+void InitPulsador(void);
+
+void InitLed(void);
+
+// TODO: insert other include files here
+
+// TODO: insert other definitions and declarations here
+
+#define tiempo 50
+#define pGPIO LPC_GPIO
+#define port 0 // Número de puerto
+#define pin 18 // Número de pin
+#define input 0
+#define output 1
+
+uint8_t count = tiempo;
+uint8_t estado = 1;
+bool flag = 0;
+bool ev_1 = 1;
+
+int main(void) {
+
+   InitHardware();
+   while(1){
+   DiagramadeEstados();
+   __WFI;
+   }
+
+    return 0 ;
+}
+
+void InitHardware(void){
+
+    SystemCoreClockUpdate();
+    // Read clock settings and update SystemCoreClock variable
+
+    Board_Init();
+
+    // Set up and initialize all required blocks and
+    // functions related to the board hardware
+
+    SysTick_Config(SystemCoreClock/1000); // Interrumpe el contador interno SysTick y entra a la función SysTick_Handler
+
+}
+
+void DiagramadeEstados(void){
+
+		switch(estado){
+		case 1:
+		{if(ev_1){
+				estado = 1;
+			}
+			else {
+				estado = 2;
+				count = tiempo;
+			}
+		}
+		break;
+		case 2:
+		{if(count == 0)
+			{if(ev_1)
+			  estado = 1;
+			 else {
+				 estado = 3;
+				 PrenderLed();
+			 }
+			}
+		 else estado = 2;
+		}
+		break;
+		case 3:
+		{if(ev_1)
+			{estado = 4;
+		    count = tiempo;
+			}
+		else estado = 3;
+		}
+		break;
+		case 4:
+		{if(count == 0)
+		   {if(ev_1)
+			 {estado = 1;
+		     ApagarLed();
+			 }
+		   else estado = 3;
+		   }
+		else estado = 4;
+		}
+		break;
+		}
+
+}
+
+void InitPulsador(void){
+
+	Chip_GPIO_SetPinDIR(pGPIO, port, pin, input); // Configura el pin como entrada
+}
+
+void InitLed(void){
+
+	Chip_GPIO_SetPinDIR(pGPIO, port, 22, output); // Configura el pin del LED como salida
+}
+
+void SysTick_Handler(void){
+	if (count){
+		count--;
+	}
+}
+
+void ApagarLed(void){
+
+	Chip_GPIO_SetPinOutLow(pGPIO, port, 22); // Apaga el LED
+}
+
+void PrenderLed(void){
+
+	Chip_GPIO_SetPinOutHigh(pGPIO, port, 22); // Enciende el LED
+}
